@@ -5,7 +5,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,9 +12,53 @@ public class Discord {
 
     public Discord() {}
 
-    public void sendMessage(String sender, String message, boolean all, String[] channels) {
+    public static void sendToAll(String sender, String message) {
 
-        String payload = String.format("""
+        String payload = getPayload(sender, message);
+        HashMap<String, String> channelList = Webhooker.CONFIG.channelList();
+
+        Discord.invokeWebhook(payload, channelList);
+    }
+
+    public static void sendToChannels(String sender, String message, String[] channels) {
+
+        String payload = Discord.getPayload(sender, message);
+
+        HashMap<String, String> channelList = new HashMap<>();
+
+        for (String key : channels) {
+            if (Webhooker.CONFIG.channelList().containsKey(key)) {
+                channelList.put(key, Webhooker.CONFIG.channelList().get(key));
+            }
+        }
+
+        Discord.invokeWebhook(payload, channelList);
+    }
+
+    private static void invokeWebhook(String payload, HashMap<String, String> channelList) {
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        for (Map.Entry<String, String> channel : channelList.entrySet()) {
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(channel.getValue()))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                    .build();
+
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static String getPayload(String sender, String message) {
+        // language=json
+        return String.format("""
             {
                 "content": "@everyone",
                 "embeds": [
@@ -29,34 +72,6 @@ public class Discord {
                 "avatar_url": "%s"
             }
             """, sender, message, Webhooker.CONFIG.username(), Webhooker.CONFIG.image());
-
-        HttpClient client = HttpClient.newHttpClient();
-
-        HashMap<String, String> channelList = new HashMap<>();
-
-        if (all) {
-            channelList = Webhooker.CONFIG.channelList();
-        } else {
-            for (String key : channels) {
-                if (Webhooker.CONFIG.channelList().containsKey(key)) {
-                    channelList.put(key, Webhooker.CONFIG.channelList().get(key));
-                }
-            }
-        }
-
-        for (Map.Entry<String, String> channel : channelList.entrySet()) {
-            try {
-                HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(channel.getValue()))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
-                    .build();
-                client.send(request, HttpResponse.BodyHandlers.ofString());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public static void initialize() {
