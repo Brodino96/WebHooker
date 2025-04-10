@@ -15,7 +15,7 @@ public class ConfigHelper {
         this.image = "https://img.freepik.com/psd-gratis/single-yellow-potato-closeup-studio-shot_191095-85935.jpg";
         this.username = "WebHooker";
         this.channelList = new HashMap<>();
-        this.channelList.put("placeholder", "https://localhost:6969/discord");
+        this.channelList.put("example", "https://discord.com/api/webhooks/your-webhook-url");
         this.mentionEveryone = true;
         this.embedColor = 5814783; // Discord blurple color
     }
