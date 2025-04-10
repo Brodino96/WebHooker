@@ -16,7 +16,7 @@ public class Discord {
         .connectTimeout(Duration.ofSeconds(10))
         .build();
 
-    public static void sendToAll(String sender, String message) {
+    public static void sendToAll(String sender, String message, String[] tags) {
 
         if (sender == null) {
             Webhooker.LOGGER.error("Sender cannot be null");
@@ -34,12 +34,12 @@ public class Discord {
             return;
         }
 
-        String payload = getPayload(sender, message);
+        String payload = getPayload(sender, message, tags);
 
         Discord.invokeWebhook(payload, channelList);
     }
 
-    public static void sendToChannels(String sender, String message, String[] channels) {
+    public static void sendToChannels(String sender, String message, String[] channels, String[] tags) {
 
         if (sender == null) {
             Webhooker.LOGGER.error("Sender cannot be null");
@@ -59,7 +59,7 @@ public class Discord {
             Webhooker.LOGGER.error("Channels list cannot be empty");
         }
 
-        String payload = Discord.getPayload(sender, message);
+        String payload = Discord.getPayload(sender, message, tags);
 
         HashMap<String, String> channelList = new HashMap<>();
 
@@ -111,7 +111,17 @@ public class Discord {
         }
     }
 
-    private static String getPayload(String sender, String message) {
+    private static String getDiscordTag(String tag) {
+        StringBuilder builder = new StringBuilder();
+        if (tag.equals("@everyone")) {
+            builder.append(tag).append(" ");
+        } else {
+            builder.append("<@&").append(tag).append("> ");
+        }
+        return builder.toString();
+    }
+
+    private static String getPayload(String sender, String message, String[] tags) {
 
         // Escape JSON special characters to prevent injection
         String escapedSender = escapeJson(sender);
@@ -121,13 +131,23 @@ public class Discord {
         int embedColor = Webhooker.CONFIG.embedColor();
 
         StringBuilder json = new StringBuilder("{");
+        StringBuilder mention = new StringBuilder();
 
-        // Add mention @everyone only if enabled in config
-        if (Webhooker.CONFIG.mentionEveryone()) {
-            json.append("\"content\": \"@everyone\",");
+        if (tags == null || tags.length == 0 && Webhooker.CONFIG.defaultTags().length != 0) {
+            for (String tag : Webhooker.CONFIG.defaultTags()) {
+                if (Webhooker.CONFIG.taggableList().containsKey(tag)) {
+                    mention.append(getDiscordTag(Webhooker.CONFIG.taggableList().get(tag)));
+                }
+            }
         } else {
-            json.append("\"content\": \"\",");
+            for (String tag : tags) {
+                if (Webhooker.CONFIG.taggableList().containsKey(tag)) {
+                    mention.append(getDiscordTag(Webhooker.CONFIG.taggableList().get(tag)));
+                }
+            }
         }
+
+        json.append("\"content\": \"").append(mention).append("\",");
 
         json.append("\"embeds\": [{")
             .append("\"title\": \"").append(escapedSender).append("\",")
