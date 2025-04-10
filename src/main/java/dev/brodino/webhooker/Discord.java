@@ -5,127 +5,76 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Discord {
-    private static final HttpClient CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+
+    public Discord() {}
 
     public static void sendToAll(String sender, String message) {
-        if (sender == null || message == null) {
-            Webhooker.LOGGER.error("Sender or message cannot be null");
-            return;
-        }
-        
-        Map<String, String> channelList = Webhooker.CONFIG.getChannelList();
-        if (channelList.isEmpty()) {
-            Webhooker.LOGGER.warn("No webhook channels configured");
-            return;
-        }
-        
+
         String payload = getPayload(sender, message);
-        invokeWebhook(payload, channelList);
+        HashMap<String, String> channelList = Webhooker.CONFIG.channelList();
+
+        Discord.invokeWebhook(payload, channelList);
     }
 
     public static void sendToChannels(String sender, String message, String[] channels) {
-        if (sender == null || message == null || channels == null || channels.length == 0) {
-            Webhooker.LOGGER.error("Invalid parameters for sendToChannels");
-            return;
-        }
-        
-        String payload = getPayload(sender, message);
-        Map<String, String> targetChannels = new HashMap<>();
 
-        for (String channel : channels) {
-            if (Webhooker.CONFIG.hasChannel(channel)) {
-                targetChannels.put(channel, Webhooker.CONFIG.getWebhookUrl(channel));
-            } else {
-                Webhooker.LOGGER.warn("Channel '{}' not found in configuration", channel);
+        String payload = Discord.getPayload(sender, message);
+
+        HashMap<String, String> channelList = new HashMap<>();
+
+        for (String key : channels) {
+            if (Webhooker.CONFIG.channelList().containsKey(key)) {
+                channelList.put(key, Webhooker.CONFIG.channelList().get(key));
             }
         }
-        
-        if (targetChannels.isEmpty()) {
-            Webhooker.LOGGER.warn("No valid channels found for webhooks");
-            return;
-        }
 
-        invokeWebhook(payload, targetChannels);
+        Discord.invokeWebhook(payload, channelList);
     }
 
-    private static void invokeWebhook(String payload, Map<String, String> channelList) {
+    private static void invokeWebhook(String payload, HashMap<String, String> channelList) {
+
+        HttpClient client = HttpClient.newHttpClient();
+
         for (Map.Entry<String, String> channel : channelList.entrySet()) {
             try {
-                String webhookUrl = channel.getValue();
-                if (webhookUrl == null || webhookUrl.isEmpty() || !webhookUrl.startsWith("http")) {
-                    Webhooker.LOGGER.warn("Invalid webhook URL for channel: {}", channel.getKey());
-                    continue;
-                }
-                
                 HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(webhookUrl))
+                    .uri(URI.create(channel.getValue()))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .timeout(Duration.ofSeconds(5))
                     .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                     .build();
 
-                HttpResponse<String> response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-                int statusCode = response.statusCode();
-                
-                if (statusCode < 200 || statusCode >= 300) {
-                    Webhooker.LOGGER.error("Webhook request failed for channel {} with status {}: {}", 
-                            channel.getKey(), statusCode, response.body());
-                } else {
-                    Webhooker.LOGGER.debug("Webhook sent successfully to channel {}", channel.getKey());
-                }
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+
             } catch (Exception e) {
-                Webhooker.LOGGER.error("Failed to send webhook to channel: {}", channel.getKey(), e);
+                e.printStackTrace();
             }
         }
     }
 
     private static String getPayload(String sender, String message) {
-        // Escape JSON special characters to prevent injection
-        String escapedSender = escapeJson(sender);
-        String escapedMessage = escapeJson(message);
-        String username = escapeJson(Webhooker.CONFIG.getUsername());
-        String imageUrl = escapeJson(Webhooker.CONFIG.getImage());
-        int embedColor = Webhooker.CONFIG.getEmbedColor();
-        
-        StringBuilder json = new StringBuilder("{");
-        
-        // Add mention @everyone only if enabled in config
-        if (Webhooker.CONFIG.shouldMentionEveryone()) {
-            json.append("\"content\": \"@everyone\",");
-        } else {
-            json.append("\"content\": \"\",");
-        }
-        
-        json.append("\"embeds\": [{")
-            .append("\"title\": \"").append(escapedSender).append("\",")
-            .append("\"description\": \"").append(escapedMessage).append("\",")
-            .append("\"color\": ").append(embedColor)
-            .append("}],")
-            .append("\"username\": \"").append(username).append("\",")
-            .append("\"avatar_url\": \"").append(imageUrl).append("\"");
-        
-        json.append("}");
-        return json.toString();
-    }
-    
-    private static String escapeJson(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.replace("\\", "\\\\").replace("\"", "\\\"")
-                .replace("\n", "\\n").replace("\r", "\\r")
-                .replace("\t", "\\t");
+        // language=json
+        return String.format("""
+            {
+                "content": "@everyone",
+                "embeds": [
+                    {
+                        "title": "%s",
+                        "description": "%s",
+                        "color": 5814783
+                    }
+                ],
+                "username": "%s",
+                "avatar_url": "%s"
+            }
+            """, sender, message, Webhooker.CONFIG.username(), Webhooker.CONFIG.image());
     }
 
     public static void initialize() {
-        Webhooker.LOGGER.info("Discord webhook integration initialized");
+        System.out.println("Webhook initialized");
     }
 }
