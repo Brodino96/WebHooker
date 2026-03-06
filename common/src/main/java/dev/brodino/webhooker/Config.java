@@ -48,11 +48,13 @@ public class Config {
         }
     }
 
-    public void reload() {
+    public boolean reload() {
         try {
             this.load();
+            return true;
         } catch (IOException e) {
             Webhooker.LOGGER.error("Failed  to reload config", e);
+            return false;
         }
     }
 
