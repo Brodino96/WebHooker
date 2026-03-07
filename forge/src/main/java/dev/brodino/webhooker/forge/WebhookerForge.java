@@ -1,7 +1,7 @@
 package dev.brodino.webhooker.forge;
 
-import dev.brodino.webhooker.Webhooker;
 import dev.architectury.platform.forge.EventBuses;
+import dev.brodino.webhooker.Webhooker;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
