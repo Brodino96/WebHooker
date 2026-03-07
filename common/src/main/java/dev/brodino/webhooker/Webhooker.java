@@ -14,7 +14,7 @@ public final class Webhooker {
         Discord.initialize();
 
         CommandRegistrationEvent.EVENT.register((dispatcher, _s, _c) -> {
-            Commands.initialize(dispatcher);
+            CommandManager.initialize(dispatcher);
         });
     }
 

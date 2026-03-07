@@ -7,16 +7,17 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 
 public class Commands {
+public class CommandManager {
 
     public static void initialize(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(net.minecraft.commands.Commands.literal(Webhooker.MOD_ID)
+        dispatcher.register(Commands.literal(Webhooker.MOD_ID)
             .requires(src -> src.hasPermission(2))
             .then(getReloadCommand())
         );
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> getReloadCommand() {
-        return net.minecraft.commands.Commands.literal("reload")
+        return Commands.literal("reload")
             .executes((CommandContext<CommandSourceStack> context) -> {
 
                 if (!Webhooker.CONFIG.reload()) {
