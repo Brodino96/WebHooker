@@ -37,12 +37,12 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        uses: gradle/gradle-build-action@v3.5.0
+        uses: gradle/actions/setup-gradle@v5
         with:
           arguments: build -x test --stacktrace
 
       - name: Release to Modrinth
-        uses: gradle/gradle-build-action@v3.5.0
+        uses: gradle/actions/setup-gradle@v5
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_type != 'none' }}
         env:
           GIT_COMMIT: ${{ github.event.after }}
@@ -53,7 +53,7 @@ jobs:
           arguments: publishUnified --stacktrace
 
       - name: Release to CurseForge
-        uses: gradle/gradle-build-action@v3.5.0
+        uses: gradle/actions/setup-gradle@v5
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_type != 'none' }}
         env:
           GIT_COMMIT: ${{ github.event.after }}
