@@ -63,9 +63,7 @@ public class Config {
         }
     }
 
-    private Config.Type getDefaults() {
-        return new Config.Type();
-    }
+    private Config.Type getDefaults() { return new Config.Type(); }
 
     private static class Type {
         public String image = "https://img.freepik.com/psd-gratis/single-yellow-potato-closeup-studio-shot_191095-85935.jpg";
@@ -85,27 +83,10 @@ public class Config {
         public String[] defaultTags = new String[]{ "everyone" };
     }
 
-    public String getImage() {
-        return this.data.image;
-    }
-
-    public String getUsername() {
-        return this.data.username;
-    }
-
-    public HashMap<String, String> getChannelList() {
-        return this.data.channelList;
-    }
-
-    public int getEmbedColor() {
-        return this.data.embedColor;
-    }
-
-    public HashMap<String, String> getTaggableList() {
-        return this.data.taggableList;
-    }
-
-    public String[] getDefaultTags() {
-        return this.data.defaultTags;
-    }
+    public String getImage() { return this.data.image; }
+    public String getUsername() { return this.data.username; }
+    public HashMap<String, String> getChannelList() { return this.data.channelList; }
+    public int getEmbedColor() { return this.data.embedColor; }
+    public HashMap<String, String> getTaggableList() { return this.data.taggableList; }
+    public String[] getDefaultTags() { return this.data.defaultTags; }
 }

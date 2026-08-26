@@ -1,6 +1,5 @@
 package dev.brodino.webhooker;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -14,9 +13,7 @@ public class Discord {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public static void initialize() {
-        Webhooker.LOGGER.info("Initializing Discord module");
-    }
+    public static void initialize() { Webhooker.LOGGER.info("Initializing Discord module"); }
 
     public static void sendToAll(String sender, String message, String[] tags) {
         String[] channels = Webhooker.CONFIG.getChannelList().keySet().toArray(new String[0]);
@@ -55,16 +52,18 @@ public class Discord {
     private static String getPayload(String sender, String message, String[] tags) {
         String escapedSender = Webhooker.escapeJson(sender);
         String escapedMessage = Webhooker.escapeJson(message);
-        String escapedUsername = Webhooker.escapeJson(Webhooker.CONFIG.getUsername());
-        String escapedImage = Webhooker.escapeJson(Webhooker.CONFIG.getImage());
+        String escapedUsername = Webhooker.CONFIG.getUsername();
+        String escapedImage = Webhooker.CONFIG.getImage();
 
         StringBuilder json = new StringBuilder("{");
         StringBuilder mention = new StringBuilder();
 
         for (String tag : tags) {
-            if (Webhooker.CONFIG.getTaggableList().containsKey(tag)) {
-                mention.append(getDiscordTag(Webhooker.CONFIG.getTaggableList().get(tag)));
-            }
+            String confirmedTag = Webhooker.CONFIG.getTaggableList().getOrDefault(tag, null);
+            if (confirmedTag == null)
+                continue;
+
+            mention.append(getDiscordTag(confirmedTag));
         }
 
         json
@@ -99,16 +98,15 @@ public class Discord {
     }
 
     public static void invokeWebhook(String payload, String[] channelList) {
-
         for (String channelKey : channelList) {
-            try {
-                String webhookUrl = Webhooker.CONFIG.getChannelList().get(channelKey);
-                if (webhookUrl == null || !webhookUrl.startsWith("http")) {
-                    Webhooker.LOGGER.error("Invalid webhook URL for channel: {}", channelKey);
-                    continue;
-                }
 
-                HttpRequest request = HttpRequest.newBuilder()
+            String webhookUrl = Webhooker.CONFIG.getChannelList().get(channelKey);
+            if (webhookUrl == null || !webhookUrl.startsWith("http")) {
+                Webhooker.LOGGER.error("Invalid webhook URL for channel: {}", channelKey);
+                continue;
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(webhookUrl))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
@@ -116,17 +114,19 @@ public class Discord {
                     .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                     .build();
 
-                HttpResponse<String> response = Discord.CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-                int status = response.statusCode();
-
-                if (status < 200 || status >= 300) {
-                    Webhooker.LOGGER.error("Webhook request failed for channel {} with status {}: {}", channelKey, status, response.body());
-                } else {
-                    Webhooker.LOGGER.info("Webhook request sent successfully to channel {}", channelKey);
-                }
-            } catch (IOException | InterruptedException e) {
-                Webhooker.LOGGER.error("Failed to send webhook to channel: {} caused by error: {}", channelKey, e);
-            }
+            CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        int status = response.statusCode();
+                        if (status < 200 || status >= 300) {
+                            Webhooker.LOGGER.error("Webhook request failed for channel {} with status {}: {}", channelKey, status, response.body());
+                        } else {
+                            Webhooker.LOGGER.info("Webhook request sent successfully to channel {}", channelKey);
+                        }
+                    })
+                    .exceptionally(e -> {
+                        Webhooker.LOGGER.error("Failed to send webhook to channel: {} caused by error: {}", channelKey, e);
+                        return null;
+                    });
         }
     }
 }
