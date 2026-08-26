@@ -34,6 +34,5 @@ jobs:
       - name: Run the tests
         run: ./gradlew test
 
-      - name: Run build in a subdirectory
-        working-directory: another-build
+      - name: Run build
         run: ./gradlew build
