@@ -55,8 +55,8 @@ public class Discord {
     private static String getPayload(String sender, String message, String[] tags) {
         String escapedSender = Webhooker.escapeJson(sender);
         String escapedMessage = Webhooker.escapeJson(message);
-        String escapedUsername = Webhooker.escapeJson(Webhooker.CONFIG.getUsername());
-        String escapedImage = Webhooker.escapeJson(Webhooker.CONFIG.getImage());
+        String escapedUsername = Webhooker.CONFIG.getUsername();
+        String escapedImage = Webhooker.CONFIG.getImage();
 
         StringBuilder json = new StringBuilder("{");
         StringBuilder mention = new StringBuilder();
