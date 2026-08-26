@@ -62,9 +62,11 @@ public class Discord {
         StringBuilder mention = new StringBuilder();
 
         for (String tag : tags) {
-            if (Webhooker.CONFIG.getTaggableList().containsKey(tag)) {
-                mention.append(getDiscordTag(Webhooker.CONFIG.getTaggableList().get(tag)));
-            }
+            String confirmedTag = Webhooker.CONFIG.getTaggableList().getOrDefault(tag, null);
+            if (confirmedTag == null)
+                continue;
+
+            mention.append(getDiscordTag(confirmedTag));
         }
 
         json
