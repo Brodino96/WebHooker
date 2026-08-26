@@ -22,10 +22,15 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
 
-      - name: Build with Gradle
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          arguments: build
+      - name: Assemble the project
+        run: ./gradlew assemble
+
+      - name: Run the tests
+        run: ./gradlew test
+
+      - name: Run build in a subdirectory
+        working-directory: another-build
+        run: ./gradlew build
