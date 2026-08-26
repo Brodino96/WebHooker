@@ -14,9 +14,7 @@ public class Discord {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public static void initialize() {
-        Webhooker.LOGGER.info("Initializing Discord module");
-    }
+    public static void initialize() { Webhooker.LOGGER.info("Initializing Discord module"); }
 
     public static void sendToAll(String sender, String message, String[] tags) {
         String[] channels = Webhooker.CONFIG.getChannelList().keySet().toArray(new String[0]);
